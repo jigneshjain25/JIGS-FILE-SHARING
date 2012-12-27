@@ -3,20 +3,21 @@
 
 #include <QMainWindow>
 
-namespace Ui {
-class MainWindow;
-}
+class QAction;
+class QMenu;
 
-class MainWindow : public QMainWindow
-{
+
+class MainWindow : public QMainWindow{
     Q_OBJECT
-    
 public:
-    explicit MainWindow(QWidget *parent = 0);
-    ~MainWindow();
-    
+    MainWindow();
 private:
-    Ui::MainWindow *ui;
+    QAction *upload;
+    QAction *download;
+    QMenu *fileMenu;
+private slots:
+    void uploadFile();
+    void downloadFile();
 };
 
 #endif // MAINWINDOW_H
