@@ -21,10 +21,11 @@ void FtpApp::createMenus()
 {
     file = menuBar()->addMenu(tr("&File"));
     file->addAction(quitAction);
-
     upload = menuBar()->addMenu(tr("&Upload"));
-
     download = menuBar()->addMenu(tr("&Download"));
+    help=menuBar()->addMenu(tr("&Help"));
+    help->addAction(helpAction);
+
 }
 
 void FtpApp::createActions()
@@ -33,6 +34,8 @@ void FtpApp::createActions()
     quitAction->setStatusTip("Quit the JIGS File Sharing");
     quitAction->setShortcut(tr("Ctrl+Q"));
     connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+    helpAction=new QAction(tr("&About"),this);
+    helpAction->setStatusTip("About JIGS File Sharing");
 
 }
 

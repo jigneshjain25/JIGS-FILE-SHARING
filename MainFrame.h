@@ -20,7 +20,9 @@ private:
     QMenu *file;
     QMenu *upload;
     QMenu *download;
+    QMenu *help;
     QAction *quitAction;
+    QAction *helpAction;
 };
 
 #endif // MAINFRAME_H
