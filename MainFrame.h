@@ -23,6 +23,9 @@ private:
     QMenu *help;
     QAction *quitAction;
     QAction *helpAction;
+
+private slots:
+    void uploadFile();
 };
 
 #endif // MAINFRAME_H

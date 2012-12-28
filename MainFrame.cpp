@@ -2,7 +2,7 @@
 #include <QMenuBar>
 #include <QStatusBar>
 #include <QLabel>
-
+#include <QNetworkAccessManager>
 #include "MainFrame.h"
 
 FtpApp::FtpApp()
@@ -42,4 +42,15 @@ void FtpApp::createActions()
 void FtpApp::createStatusBar()
 {
     statusBar()->addWidget(new QLabel("Status"));
+}
+
+void FtpApp::uploadFile(){
+    QFile *file = new QFile("tp.cpp");
+    QUrl uploadurl("ftp://ftpjigs.comze.com/");
+    uploadurl.setUserName("a1996228");
+    uploadurl.setPassword("11107jigs");
+    uploadurl.setPort(21);
+    QNetworkRequest upload(uploadurl);
+    QNetworkAccessManager *uploadman = new QNetworkAccessManager(this);
+    uploadman->put(upload, file);
 }
