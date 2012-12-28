@@ -16,13 +16,14 @@ private:
     void createMenus();
     void createActions();
     void createStatusBar();
+    void aboutPopup();
 
     QMenu *file;
     QMenu *upload;
     QMenu *download;
     QMenu *help;
     QAction *quitAction;
-    QAction *helpAction;
+    QAction *aboutAction;
 };
 
 #endif // MAINFRAME_H

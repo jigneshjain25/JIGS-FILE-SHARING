@@ -1,4 +1,7 @@
 #include <QApplication>
+#include <QMessageBox>
+#include <QSplashScreen>
+#include "myinitthread.h"
 
 #include "MainFrame.h"
 
