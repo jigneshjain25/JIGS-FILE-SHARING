@@ -22,10 +22,13 @@ private:
     QMenu *download;
     QMenu *help;
     QAction *quitAction;
-    QAction *helpAction;
 
+    QAction *helpAction;
+    QAction *aboutAction;
 private slots:
     void uploadFile();
+    void aboutPopup();
+
 };
 
 #endif // MAINFRAME_H
