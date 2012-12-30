@@ -5,7 +5,8 @@
 #include <QMainWindow>
 #include <QAction>
 #include <QMenu>
-#include <QNetworkReply>
+
+#include "JIGSNetworkReply.h"
 
 class FtpApp : public QMainWindow
 {
@@ -13,7 +14,6 @@ class FtpApp : public QMainWindow
 
 public:
     FtpApp();
-
 
 private:
 
@@ -27,17 +27,20 @@ private:
     QMenu *upload;
     QMenu *download;
     QMenu *help;
-    QAction *quitAction;
 
+    QAction *quitAction;
+    QAction *downloadFileAction;
     QAction *helpAction;
     QAction *aboutAction;
-
     QAction *uploadFileAction;
+
 private slots:
     void uploadFile();
     void aboutPopup();
     void checkError(QNetworkReply::NetworkError);
     void uploadSuccess();
+    void downloadFile();
+    void writeDownloadedFile(QByteArray,QString);
 };
 
 #endif // MAINFRAME_H

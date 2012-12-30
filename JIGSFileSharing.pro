@@ -3,8 +3,10 @@ QT += gui declarative
 QT += network
 
 HEADERS += \
-    MainFrame.h
+    MainFrame.h \
+    JIGSNetworkReply.h
 
 SOURCES += \
     MainFrame.cpp \
-    Main.cpp
+    Main.cpp \
+    JIGSNetworkReply.cpp
