@@ -9,6 +9,7 @@
 #include <QAuthenticator>
 #include <iostream>
 #include <QFileDialog>
+#include <QInputDialog>
 
 #include "MainFrame.h"
 #include "JIGSNetworkReply.h"
@@ -104,7 +105,7 @@ void FtpApp::checkError(QNetworkReply::NetworkError e)
 {
     statusLabel->setText("Upload Failed");
     QMessageBox msgBox(this);
-    msgBox.setText("QNetworkReply::NetworkError "+e);
+    msgBox.setText("QNetworkReply::NetworkError "+e);    
     msgBox.exec();
     statusLabel->setText("Status");
 }
@@ -120,20 +121,23 @@ void FtpApp::uploadSuccess()
 
 void FtpApp::downloadFile()
 {
+    QInputDialog qid(this);
+    qid.setLabelText("Enter file name:");
+    qid.exec();
+    QString fileName = qid.textValue();
+
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
 
-    QUrl url("ftp://ftp.ftpjigs.comze.com/public_html/prime.cpp");
+    QUrl url("ftp://ftp.ftpjigs.comze.com/public_html/"+fileName);
     url.setPort(21);
     url.setUserName("a1996228");
     url.setPassword("11107jigs");
     QNetworkRequest download(url);
     statusLabel->setText("Downloading file...wait!");
 
-    QString fileName = QFileInfo(url.path()).fileName();
-
-    //QNetworkReply* qreply = manager->get(download);
     JIGSNetworkReply *qreply=new JIGSNetworkReply(manager->get(download));
     JIGSNetworkReply *reply=qreply->getJIGSNetworkReply();
+
     reply->setFileName(fileName);
 
     connect(reply,SIGNAL(downloadedData(QByteArray,QString)),this,SLOT(writeDownloadedFile(QByteArray,QString)));
@@ -142,13 +146,16 @@ void FtpApp::downloadFile()
 
 void FtpApp::writeDownloadedFile(QByteArray data,QString fileName)
 {
-    std::cout<<"Success!\n";
-    QString Name=QFileDialog::getSaveFileName(this);
-    QFile file(fileName);
-    if(!file.open(QIODevice::WriteOnly)){
-        std::cout<<"Cannot be done now";
+    if(data.size()!=0){
+        std::cout<<"Success!\n";
+        QString name=QFileDialog::getSaveFileName(this);
+        if(name!=0){
+            QFile file(fileName);
+            if(!file.open(QIODevice::WriteOnly))
+                std::cout<<"Cannot be done now";
+            file.write(data);
+        }
     }
-    file.write(data);
     statusLabel->setText("Status");
 }
 
