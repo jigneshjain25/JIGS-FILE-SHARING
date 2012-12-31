@@ -17,7 +17,7 @@
 FtpApp::FtpApp()
 {
     setWindowTitle("JIGS File Sharing");
-    setGeometry(150,150,700,500);
+    setGeometry(250,150,700,500);
     QPalette palette;
     palette.setColor(backgroundRole(), Qt::cyan);
     setPalette(palette);
@@ -126,6 +126,8 @@ void FtpApp::downloadFile()
     qid.exec();
     QString fileName = qid.textValue();
 
+    QString file=QFileDialog::getSaveFileName(this,tr("Save Downloaded File"),"/home/gaurav/Downloads/"+fileName);
+
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
 
     QUrl url("ftp://ftp.ftpjigs.comze.com/public_html/"+fileName);
@@ -138,7 +140,7 @@ void FtpApp::downloadFile()
     JIGSNetworkReply *qreply=new JIGSNetworkReply(manager->get(download));
     JIGSNetworkReply *reply=qreply->getJIGSNetworkReply();
 
-    reply->setFileName(fileName);
+    reply->setFileName(file);
 
     connect(reply,SIGNAL(downloadedData(QByteArray,QString)),this,SLOT(writeDownloadedFile(QByteArray,QString)));
     connect(reply->reply,SIGNAL(error(QNetworkReply::NetworkError)),this,SLOT(checkError(QNetworkReply::NetworkError)));
@@ -146,11 +148,9 @@ void FtpApp::downloadFile()
 
 void FtpApp::writeDownloadedFile(QByteArray data,QString fileName)
 {
-    if(data.size()!=0){
-        std::cout<<"Success!\n";
-        QString name=QFileDialog::getSaveFileName(this);
-        if(name!=0){
-            QFile file(fileName);
+    if(data.size()!=0){               
+        if(fileName!=0){
+            QFile file(fileName.toStdString().data());
             if(!file.open(QIODevice::WriteOnly))
                 std::cout<<"Cannot be done now";
             file.write(data);
@@ -158,21 +158,6 @@ void FtpApp::writeDownloadedFile(QByteArray data,QString fileName)
     }
     statusLabel->setText("Status");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
