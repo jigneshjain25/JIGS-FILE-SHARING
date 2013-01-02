@@ -5,8 +5,10 @@
 #include <QMainWindow>
 #include <QAction>
 #include <QMenu>
+#include <QTreeWidget>
 
 #include "JIGSNetworkReply.h"
+#include "qftp.h"
 
 class FtpApp : public QMainWindow
 {
@@ -20,6 +22,7 @@ private:
     void createMenus();
     void createActions();
     void createStatusBar();
+    void getFiles();
 
     QLabel *statusLabel;
 
@@ -33,7 +36,12 @@ private:
     QAction *helpAction;
     QAction *aboutAction;
     QAction *uploadFileAction;
+
     QProgressBar *progressBar;
+
+    QTreeWidget *fileList;
+
+    QFtp *ftp;
 
     QNetworkAccessManager *manager;
     QUrl url;
@@ -46,6 +54,9 @@ private slots:
     void setMyValue(qint64,qint64);
     void downloadFile();
     void writeDownloadedFile(QByteArray,QString);
+    void addToList(const QUrlInfo&);
+    void changeOfState(int);
+    void downloadFile(QTreeWidgetItem*);
 };
 
 #endif // MAINFRAME_H
