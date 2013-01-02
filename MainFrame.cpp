@@ -6,6 +6,7 @@
 #include <QNetworkRequest>
 #include <QMessageBox>
 #include <QNetworkReply>
+#include <QProgressBar>
 #include <QAuthenticator>
 #include <iostream>
 #include <QFileDialog>
@@ -16,6 +17,11 @@
 
 FtpApp::FtpApp()
 {
+    manager = new QNetworkAccessManager(this);
+    url.setPort(21);
+    url.setUserName("a1996228");
+    url.setPassword("11107jigs");
+
     setWindowTitle("JIGS File Sharing");
     setGeometry(250,150,700,500);
     QPalette palette;
@@ -71,7 +77,14 @@ void FtpApp::createStatusBar()
 }
 
 void FtpApp::uploadFile(){
-    QNetworkAccessManager* manager = new QNetworkAccessManager(this);
+    progressBar = new QProgressBar();
+    progressBar->setAlignment(Qt::AlignCenter);
+   // progressBar->setWindowFlags(Qt::WindowMinimizeButtonHint | Qt::WindowTransparentForInput);
+    progressBar->setMinimum(0);
+    progressBar->setMaximum(100);
+    progressBar->setFixedWidth(300);
+
+    manager = new QNetworkAccessManager(this);
 
     QString fileName = QFileDialog::getOpenFileName(this,"Select File to Upload","","*");
     if(fileName.isNull())return;
@@ -79,19 +92,27 @@ void FtpApp::uploadFile(){
     QFile *file = new QFile(fileName);
     QFileInfo fileInfo(*file);
     file->open(QIODevice::ReadOnly);
+    progressBar->setWindowTitle(fileInfo.fileName());
+   // progressBar->setFixedSize(sizeHint());
 
     QString address("ftp://ftp.ftpjigs.comze.com/public_html/");
     address.append(fileInfo.fileName());
-    std::cout<<file->fileName().toStdString();
-    QUrl url(address);
-    url.setPort(21);
-    url.setUserName("a1996228");
-    url.setPassword("11107jigs");
+   // std::cout<<file->fileName().toStdString();
+    url.setUrl(address);
+
     QNetworkRequest upload(url);
-    statusLabel->setText("Uploading...wait!");
+    progressBar->show();
+
     QNetworkReply* reply =manager->put(upload,file);
     connect(reply,SIGNAL(error(QNetworkReply::NetworkError)),this,SLOT(checkError(QNetworkReply::NetworkError)));
-    connect(manager,SIGNAL(finished(QNetworkReply*)),this,SLOT(uploadSuccess()));
+    connect(manager,SIGNAL(finished(QNetworkReply*)),this,SLOT(uploadSuccess(QNetworkReply*)));
+    connect(reply,SIGNAL(uploadProgress(qint64,qint64)),this,SLOT(setMyValue(qint64,qint64)));
+
+}
+
+void FtpApp::setMyValue(qint64 a,qint64 b)
+{
+    progressBar->setValue((int)a*100/b);
 }
 
 void FtpApp::aboutPopup()
@@ -103,20 +124,19 @@ void FtpApp::aboutPopup()
 
 void FtpApp::checkError(QNetworkReply::NetworkError e)
 {
-    statusLabel->setText("Upload Failed");
     QMessageBox msgBox(this);
-    msgBox.setText("QNetworkReply::NetworkError "+e);    
+    msgBox.setText("QNetworkReply::NetworkError "+e);
     msgBox.exec();
-    statusLabel->setText("Status");
+    progressBar->close();
 }
 
-void FtpApp::uploadSuccess()
+void FtpApp::uploadSuccess(QNetworkReply *reply)
 {
-    statusLabel->setText("Upload Successfull");
     QMessageBox msgBox(this);
     msgBox.setText("Upload Successfull : Congo!");
     msgBox.exec();
-    statusLabel->setText("Status");
+    progressBar->close();
+    reply->deleteLater();
 }
 
 void FtpApp::downloadFile()
@@ -128,12 +148,8 @@ void FtpApp::downloadFile()
 
     QString file=QFileDialog::getSaveFileName(this,tr("Save Downloaded File"),"/home/gaurav/Downloads/"+fileName);
 
-    QNetworkAccessManager* manager = new QNetworkAccessManager(this);
+    url.setUrl("ftp://ftp.ftpjigs.comze.com/public_html/"+fileName);
 
-    QUrl url("ftp://ftp.ftpjigs.comze.com/public_html/"+fileName);
-    url.setPort(21);
-    url.setUserName("a1996228");
-    url.setPassword("11107jigs");
     QNetworkRequest download(url);
     statusLabel->setText("Downloading file...wait!");
 
@@ -158,9 +174,3 @@ void FtpApp::writeDownloadedFile(QByteArray data,QString fileName)
     }
     statusLabel->setText("Status");
 }
-
-
-
-
-
-

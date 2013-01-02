@@ -1,6 +1,6 @@
 #ifndef MAINFRAME_H
 #define MAINFRAME_H
-
+#include <QProgressBar>
 #include<QLabel>
 #include <QMainWindow>
 #include <QAction>
@@ -33,12 +33,17 @@ private:
     QAction *helpAction;
     QAction *aboutAction;
     QAction *uploadFileAction;
+    QProgressBar *progressBar;
+
+    QNetworkAccessManager *manager;
+    QUrl url;
 
 private slots:
     void uploadFile();
     void aboutPopup();
-    void checkError(QNetworkReply::NetworkError);
-    void uploadSuccess();
+    void checkError(QNetworkReply::NetworkError e);
+    void uploadSuccess(QNetworkReply *reply);
+    void setMyValue(qint64,qint64);
     void downloadFile();
     void writeDownloadedFile(QByteArray,QString);
 };
