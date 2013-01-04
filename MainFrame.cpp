@@ -13,23 +13,27 @@
 #include <QInputDialog>
 #include <QVBoxLayout>
 #include <QHeaderView>
+#include <QProgressDialog>
+#include <QAbstractNetworkCache>
 
 #include "MainFrame.h"
 #include "JIGSNetworkReply.h"
+#include "JIGSProgressDialog.h"
 #include "qftp.h"
 
 FtpApp::FtpApp()
 {
-    manager = new QNetworkAccessManager(this);
-    url.setPort(21);
-    url.setUserName("a1996228");
-    url.setPassword("11107jigs");
-
+    manager = new QNetworkAccessManager(this);    
     setWindowTitle("JIGS File Sharing");
     setGeometry(430,300,555,400);
-    QPalette palette;
-    palette.setColor(backgroundRole(), Qt::cyan);
-    setPalette(palette);
+
+    QMovie *movie = new QMovie(":/images/waiting.gif");
+    QLabel *processLabel = new QLabel(this);
+    processLabel->setMovie(movie);
+    movie->start();
+    QVBoxLayout *layout=new QVBoxLayout();
+    layout->addWidget(processLabel, Qt::AlignCenter);
+
     createStatusBar();
     createActions();
     createMenus();
@@ -38,7 +42,8 @@ FtpApp::FtpApp()
     fileList->setRootIsDecorated(false);
     fileList->setHeaderLabels(QStringList() << tr("Name") << tr("Size") << tr("Owner") << tr("Group") << tr("Time"));
     fileList->setColumnWidth(0,150);
-    this->setCentralWidget(fileList);
+    this->setContentsMargins(250,0,0,0);
+    this->setCentralWidget(processLabel);
     connect(fileList,SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)),this,SLOT(downloadFile(QTreeWidgetItem*)));
     getFiles();
 }
@@ -82,17 +87,15 @@ void FtpApp::addToList(const QUrlInfo &urlInfo)
 {
     QTreeWidgetItem *item = new QTreeWidgetItem;
     item->setText(0, urlInfo.name());
-    item->setText(1, QString::number(float(urlInfo.size())/1000)+"MB");
+    item->setText(1, QString::number(float(urlInfo.size())/1000)+"KB");
     item->setText(2, urlInfo.owner());
     item->setText(3, urlInfo.group());
-    item->setText(4, urlInfo.lastModified().toString("MMM dd yyyy"));
+    item->setText(4, urlInfo.lastModified().toString("MMM dd yyyy"));    
 
-    //connect(item,SIGNAL(triggered()),this,SLOT(downloadFile()));
+    fileSize[urlInfo.name()]=urlInfo.size();
 
     QPixmap pixmap(urlInfo.isDir() ? ":/images/dir.png" : ":/images/file.png");
     item->setIcon(0, pixmap);
-
-    //isDirectory[urlInfo.name()] = urlInfo.isDir();
 
     fileList->addTopLevelItem(item);
     if (!fileList->currentItem()) {
@@ -100,6 +103,8 @@ void FtpApp::addToList(const QUrlInfo &urlInfo)
         fileList->setEnabled(true);
     }
     statusLabel->setText("Status");
+    this->setContentsMargins(0,0,0,0);
+    this->setCentralWidget(fileList);
 }
 
 void FtpApp::createMenus()
@@ -122,7 +127,7 @@ void FtpApp::createActions()
     quitAction = new QAction(tr("&Quit"),this);
     quitAction->setStatusTip("Quit the JIGS File Sharing");
     quitAction->setShortcut(Qt::CTRL + Qt::Key_Q);
-    connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+    connect(quitAction, SIGNAL(triggered()), this, SLOT(quit()));
 
     aboutAction=new QAction(tr("&About"),this);
     aboutAction->setStatusTip("About JIGS File Sharing");
@@ -137,6 +142,12 @@ void FtpApp::createActions()
     downloadFileAction->setShortcut(Qt::CTRL + Qt::Key_D);
     downloadFileAction->setStatusTip("Download a single file from FTP sever");
     connect(downloadFileAction,SIGNAL(triggered()),this,SLOT(downloadFile()));
+}
+
+void FtpApp::quit()
+{
+    close();
+    QCoreApplication::exit();
 }
 
 void FtpApp::createStatusBar()
@@ -167,6 +178,9 @@ void FtpApp::uploadFile(){
     QString address("ftp://ftp.ftpjigs.comze.com/public_html/");
     address.append(fileInfo.fileName());
     url.setUrl(address);
+    url.setPort(21);
+    url.setUserName("a1996228");
+    url.setPassword("11107jigs");
 
     QNetworkRequest upload(url);
     progressBar->show();
@@ -213,22 +227,39 @@ void FtpApp::downloadFile()
     qid.setLabelText("Enter file name:");
     qid.exec();
     QString fileName = qid.textValue();
+    if(fileName!=0){
+        QHash<QString, qint64>::const_iterator i = fileSize.find(fileName);
+        if(i==fileSize.end()) QMessageBox::information(this,"File Not Found","No such file is present on server");
+    else
+        {
+            QString file=QFileDialog::getSaveFileName(this,tr("Save Downloaded File"),"/home/gaurav/Downloads/"+fileName);
 
-    QString file=QFileDialog::getSaveFileName(this,tr("Save Downloaded File"),"/home/gaurav/Downloads/"+fileName);
+            if(file!=0){
+                url.setUrl("ftp://ftp.ftpjigs.comze.com/public_html/"+fileName);
+                url.setPort(21);
+                url.setUserName("a1996228");
+                url.setPassword("11107jigs");
 
-    if(file!=0){
-    url.setUrl("ftp://ftp.ftpjigs.comze.com/public_html/"+fileName);
+                QNetworkRequest download(url);
+                statusLabel->setText("Downloading file...wait!");
 
-    QNetworkRequest download(url);
-    statusLabel->setText("Downloading file...wait!");
+                JIGSProgressDialog *progressDialog=new JIGSProgressDialog();
 
-    JIGSNetworkReply *qreply=new JIGSNetworkReply(manager->get(download));
-    JIGSNetworkReply *reply=qreply->getJIGSNetworkReply();
+                progressDialog->show();
+                progressDialog->setTotal(fileSize[fileName]);
+                progressDialog->setFixedWidth(300);
 
-    reply->setFileName(file);
+                JIGSNetworkReply *qreply=new JIGSNetworkReply(manager->get(download));
+                JIGSNetworkReply *reply=qreply->getJIGSNetworkReply();
 
-    connect(reply,SIGNAL(downloadedData(QByteArray,QString)),this,SLOT(writeDownloadedFile(QByteArray,QString)));
-    connect(reply->reply,SIGNAL(error(QNetworkReply::NetworkError)),this,SLOT(checkError(QNetworkReply::NetworkError)));
+                reply->setFileName(file);
+
+                connect(reply->reply,SIGNAL(downloadProgress(qint64,qint64)),progressDialog,SLOT(setProgress(qint64)));
+                connect(reply->reply,SIGNAL(finished()),progressDialog,SLOT(setProgress()));
+                connect(reply,SIGNAL(downloadedData(QByteArray,QString)),this,SLOT(writeDownloadedFile(QByteArray,QString)));
+                connect(reply->reply,SIGNAL(error(QNetworkReply::NetworkError)),this,SLOT(checkError(QNetworkReply::NetworkError)));
+            }
+        }
     }
 }
 
@@ -252,15 +283,26 @@ void FtpApp::downloadFile(QTreeWidgetItem* item)
 
     if(file!=0){
     url.setUrl("ftp://ftp.ftpjigs.comze.com/public_html/"+fileName);
+    url.setPort(21);
+    url.setUserName("a1996228");
+    url.setPassword("11107jigs");
 
     QNetworkRequest download(url);
     statusLabel->setText("Downloading file...wait!");
 
+    JIGSProgressDialog *progressDialog=new JIGSProgressDialog();
+
+    progressDialog->show();
+    progressDialog->setTotal(fileSize[fileName]);
+    progressDialog->setFixedWidth(300);
+
     JIGSNetworkReply *qreply=new JIGSNetworkReply(manager->get(download));
-    JIGSNetworkReply *reply=qreply->getJIGSNetworkReply();
+    JIGSNetworkReply *reply=qreply->getJIGSNetworkReply();    
 
-    reply->setFileName(file);
+    reply->setFileName(file);    
 
+    connect(reply->reply,SIGNAL(downloadProgress(qint64,qint64)),progressDialog,SLOT(setProgress(qint64)));
+    connect(reply->reply,SIGNAL(finished()),progressDialog,SLOT(setProgress()));
     connect(reply,SIGNAL(downloadedData(QByteArray,QString)),this,SLOT(writeDownloadedFile(QByteArray,QString)));
     connect(reply->reply,SIGNAL(error(QNetworkReply::NetworkError)),this,SLOT(checkError(QNetworkReply::NetworkError)));
     }

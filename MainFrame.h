@@ -46,7 +46,10 @@ private:
     QNetworkAccessManager *manager;
     QUrl url;
 
+    QHash<QString, qint64> fileSize;
+
 private slots:
+    void quit();
     void uploadFile();
     void aboutPopup();
     void checkError(QNetworkReply::NetworkError e);

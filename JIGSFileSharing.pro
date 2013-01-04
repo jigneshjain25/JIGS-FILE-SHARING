@@ -10,11 +10,13 @@ HEADERS += \
     MainFrame.h \
     JIGSNetworkReply.h \
     qftp.h \
-    qurlinfo.h
+    qurlinfo.h \
+    JIGSProgressDialog.h
 
 SOURCES += \
     MainFrame.cpp \
     Main.cpp \
     JIGSNetworkReply.cpp \
     qftp.cpp \
-    qurlinfo.cpp
+    qurlinfo.cpp \
+    JIGSProgressDialog.cpp
