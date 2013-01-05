@@ -15,6 +15,7 @@
 #include <QHeaderView>
 #include <QProgressDialog>
 #include <QAbstractNetworkCache>
+#include <QSplashScreen>
 
 #include "MainFrame.h"
 #include "JIGSNetworkReply.h"
@@ -28,28 +29,34 @@ FtpApp::FtpApp()
     setGeometry(430,300,555,400);
 
     QMovie *movie = new QMovie(":/images/waiting.gif");
-    QLabel *processLabel = new QLabel(this);
+    processLabel = new QLabel(this);
     processLabel->setMovie(movie);
     movie->start();
-    QVBoxLayout *layout=new QVBoxLayout();
-    layout->addWidget(processLabel, Qt::AlignCenter);
+
+    splash = new QSplashScreen;
+    splash->setPixmap(QPixmap(":/images/FtpSplash.png"));
+    splash->show();
 
     createStatusBar();
     createActions();
     createMenus();
+
     fileList = new QTreeWidget;
     fileList->setEnabled(false);
     fileList->setRootIsDecorated(false);
     fileList->setHeaderLabels(QStringList() << tr("Name") << tr("Size") << tr("Owner") << tr("Group") << tr("Time"));
     fileList->setColumnWidth(0,150);
-    this->setContentsMargins(250,0,0,0);
-    this->setCentralWidget(processLabel);
+
     connect(fileList,SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)),this,SLOT(downloadFile(QTreeWidgetItem*)));
+
     getFiles();
 }
 
 void FtpApp::getFiles()
 {
+    Qt::Alignment leftBottom = Qt::AlignLeft | Qt::AlignBottom;
+
+    splash->showMessage("Looking up host...",leftBottom,Qt::white);
     statusLabel->setText("Looking up host...");
     ftp = new QFtp(this);
     fileList->clear();
@@ -69,16 +76,21 @@ void FtpApp::getFiles()
 
 void FtpApp::changeOfState(int state)
 {
+    Qt::Alignment leftBottom = Qt::AlignLeft | Qt::AlignBottom;
+
     if(state==2){
+        splash->showMessage("Connecting...",leftBottom,Qt::white);
         statusLabel->setText("Connecting...");
     }
     else if(state==3){
+        splash->showMessage("Connected...Loging In...",leftBottom,Qt::white);
         statusLabel->setText("Connected...Loging In...");
     }
     else if(state==4){
-        statusLabel->setText("Logged In...Getting file list");
+        splash->showMessage("Logged In...Getting file list...",leftBottom,Qt::white);
+        statusLabel->setText("Logged In...Getting file list...");
         fileList->setEnabled(true);
-        ftp->cd("public_html");
+        ftp->cd("public_html");        
         ftp->list();
     }
 }
@@ -105,11 +117,16 @@ void FtpApp::addToList(const QUrlInfo &urlInfo)
     statusLabel->setText("Status");
     this->setContentsMargins(0,0,0,0);
     this->setCentralWidget(fileList);
+    //if(processLabel!=0) {delete processLabel;std::cout<<"Success";}
+    splash->close();
+    this->show();
 }
 
 void FtpApp::createMenus()
 {
     file = menuBar()->addMenu(tr("&File"));
+    file->addAction(refresh);
+    file->addSeparator();
     file->addAction(quitAction);
 
     upload = menuBar()->addMenu(tr("&Upload"));
@@ -124,6 +141,11 @@ void FtpApp::createMenus()
 
 void FtpApp::createActions()
 {
+    refresh = new QAction("&Refresh",this);
+    refresh->setStatusTip("Refresh the list of files");
+    refresh->setShortcut(Qt::Key_F5);
+    connect(refresh,SIGNAL(triggered()),this,SLOT(refreshList()));
+
     quitAction = new QAction(tr("&Quit"),this);
     quitAction->setStatusTip("Quit the JIGS File Sharing");
     quitAction->setShortcut(Qt::CTRL + Qt::Key_Q);
@@ -142,6 +164,17 @@ void FtpApp::createActions()
     downloadFileAction->setShortcut(Qt::CTRL + Qt::Key_D);
     downloadFileAction->setStatusTip("Download a single file from FTP sever");
     connect(downloadFileAction,SIGNAL(triggered()),this,SLOT(downloadFile()));
+}
+
+void FtpApp::refreshList()
+{
+    fileList->clear();
+    fileSize.clear();         
+
+    //this->setContentsMargins(250,0,0,0);
+    //this->setCentralWidget(processLabel);
+
+    getFiles();
 }
 
 void FtpApp::quit()

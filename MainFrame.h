@@ -6,6 +6,7 @@
 #include <QAction>
 #include <QMenu>
 #include <QTreeWidget>
+#include <QSplashScreen>
 
 #include "JIGSNetworkReply.h"
 #include "qftp.h"
@@ -31,6 +32,7 @@ private:
     QMenu *download;
     QMenu *help;
 
+    QAction *refresh;
     QAction *quitAction;
     QAction *downloadFileAction;
     QAction *helpAction;
@@ -48,8 +50,13 @@ private:
 
     QHash<QString, qint64> fileSize;
 
+    QLabel *processLabel;
+
+    QSplashScreen *splash;
+
 private slots:
-    void quit();
+    void refreshList();
+    void quit();    
     void uploadFile();
     void aboutPopup();
     void checkError(QNetworkReply::NetworkError e);
